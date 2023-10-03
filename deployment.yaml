@@ -12,9 +12,9 @@ metadata:
   name: rancher-selector-role
   namespace: kube-system
 rules:
-  - apiGroups: ["batch"]
-    resources: ["cronjobs"]
-    verbs: ["get", "update"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create", "get", "update", "list"]
 
 ---
 
@@ -49,14 +49,11 @@ spec:
       labels:
         app: rancher-selector
     spec:
-      serviceAccountName: rancher-selector
+      serviceAccountName: rancher-selector-sa
       containers:
         - name: rancher-selector
           image: wrkode/rancher-selector:dev
-          env:
-            - name: CRONJOB_NAME
-              value: "rancher-query-job"
-
+          imagePullPolicy: Always
 ---
 
 apiVersion: v1
@@ -65,7 +62,7 @@ metadata:
   name: rancher-selector-service
   namespace: kube-system
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
     - port: 8080
   selector:
