@@ -7,6 +7,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"log"
 	"regexp"
 	"strings"
 )
@@ -77,5 +78,39 @@ func CreateOrUpdateConfigMap(event ProjectEvent, cmName, namespace string) error
 		}
 	}
 
+	return nil
+}
+
+func DeleteProjectFromConfigMap(event ProjectEvent) error {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return err
+	}
+
+	cmClient := clientset.CoreV1().ConfigMaps("kube-system")
+
+	cm, err := cmClient.Get(context.TODO(), "rancher-data", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	projectIdSanitized := sanitizeKey(event.Name)
+
+	// Remove the project entry from the ConfigMap data
+	annotationsKey := fmt.Sprintf("%s-annotations", projectIdSanitized)
+	delete(cm.Data, annotationsKey)
+
+	_, err = cmClient.Update(context.TODO(), cm, metav1.UpdateOptions{})
+	if err != nil {
+		log.Printf("Error updating ConfigMap after deleting project: %v", err)
+		return err
+	}
+
+	log.Println("Successfully deleted project from ConfigMap:", event.Name)
 	return nil
 }

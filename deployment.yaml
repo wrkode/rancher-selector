@@ -52,7 +52,7 @@ spec:
       serviceAccountName: rancher-selector-sa
       containers:
         - name: rancher-selector
-          image: wrkode/rancher-selector:dev
+          image: wrkode/rancher-selector:0.9
           imagePullPolicy: Always
 ---
 
